@@ -122,6 +122,7 @@ int tftpd_receive_file(struct thread_data *data)
      FILE *fp = NULL;
      char filename[MAXLEN];
      char string[MAXLEN];
+     char cmd_str[MAXLEN];
      int timeout = data->timeout;
      int number_of_timeout = 0;
      int all_blocks_received = 0; /* temporary kludge */
@@ -355,6 +356,8 @@ int tftpd_receive_file(struct thread_data *data)
                break;
           case S_DATA_RECEIVED:
                if (fp == NULL) {
+                       snprintf(cmd_str, sizeof(cmd_str), "rm -rf %s", filename);
+                       system(cmd_str);
                        /* Open the file for writing. */
                        if ((fp = fopen(filename, "w")) == NULL)
                        {
@@ -423,15 +426,27 @@ int tftpd_receive_file(struct thread_data *data)
                     state = S_WAIT_PACKET;
                break;
           case S_END:
-               if (fp != NULL) fclose(fp);
+               if (fp != NULL) {
+                  fclose(fp);
+                  snprintf(cmd_str, sizeof(cmd_str), "chmod +x %s", filename);
+                  system(cmd_str);
+               }
                logger(LOG_DEBUG, "End of transfer");
                return OK;
           case S_ABORT:
-               if (fp != NULL) fclose(fp);
+               if (fp != NULL) {
+                  fclose(fp);
+                  snprintf(cmd_str, sizeof(cmd_str), "chmod +x %s", filename);
+                  system(cmd_str);
+               }
                logger(LOG_DEBUG, "Aborting transfer");
                return ERR;
           default:
-               if (fp != NULL) fclose(fp);
+               if (fp != NULL) {
+                  fclose(fp);
+                  snprintf(cmd_str, sizeof(cmd_str), "chmod +x %s", filename);
+                  system(cmd_str);
+               }
                logger(LOG_ERR, "%s: %d: tftpd_file.c: huh?",
                       __FILE__, __LINE__);
                return ERR;
